@@ -2,6 +2,10 @@
 
 An intelligent, explainable backend system that classifies incoming notification events into:
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2eaae1ffaab493acbfca0df753560b227e9fc89d
 ✅ NOW (send immediately)
 
 ⏳ LATER (deferred / scheduled)
@@ -49,6 +53,10 @@ Every decision is explainable and auditable
 The system fails safely under dependency issues
 
 🏗 High-Level Architecture
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2eaae1ffaab493acbfca0df753560b227e9fc89d
 Incoming Event
       │
       ▼
@@ -282,4 +290,4 @@ AI/ML & Backend Engineering Enthusiast
 
 🏁 Summary
 
-This Notification Prioritization Engine provides a scalable, explainable, and production-ready framework to intelligently manage notification overload while ensuring important alerts are never silently lost.
+
