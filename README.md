@@ -1,105 +1,228 @@
 📢 Notification Prioritization Engine
 
-An intelligent backend system that classifies incoming notifications into:
+An intelligent, explainable backend system that classifies incoming notification events into:
 
-✅ NOW
 
-⏳ LATER
+✅ NOW (send immediately)
 
-❌ NEVER
+⏳ LATER (deferred / scheduled)
+
+❌ NEVER (suppressed)
 
 The system reduces notification overload using:
 
 Hard override rules
 
-TTL-based deduplication
+TTL-based duplicate suppression
 
 Alert fatigue control
 
 AI-assisted scoring
 
-Full audit logging
+Persistent audit logging
 
 Explainable decision outputs
 
 🚀 Problem Statement
 
-Users receive too many notifications.
-Some are repetitive.
-Some arrive at bad times.
-Some low-value notifications are sent while important ones are delayed.
+Modern applications send notifications from multiple sources (messages, alerts, promotions, system events). Users often experience:
 
-This system ensures:
+Too many notifications
 
-Important notifications are prioritized.
+Duplicate messages
 
-Duplicates are suppressed.
+Low-value spam
 
-Alert fatigue is reduced.
+Important alerts being delayed
 
-Every decision is explainable and auditable.
+Notification fatigue
 
-🏗 Architecture Overview
+This engine ensures:
 
-1️⃣ Input Layer
+Important notifications are prioritized
 
-Receives notification events via FastAPI endpoint:
+Duplicates are suppressed
 
-POST /notifications
+Alert fatigue is minimized
 
-2️⃣ Decision Engine Pipeline
+Every decision is explainable and auditable
 
-Expiry Check
+The system fails safely under dependency issues
 
-Critical Override
+🏗 High-Level Architecture
 
-Duplicate Detection (TTL window)
+Incoming Event
+      │
+      ▼
+API Layer (FastAPI)
+      │
+      ▼
+Decision Engine
+ ├── Expiry Check
+ ├── Critical Override
+ ├── Deduplication (TTL)
+ ├── Rule-Based Scoring
+ ├── Fatigue Penalty
+ ├── AI Score
+      │
+      ▼
+Final Classification
+(NOW / LATER / NEVER)
+      │
+      ▼
+Audit Log (SQLite)
+🧠 Decision Logic Strategy
 
-Rule-Based Scoring
+The decision pipeline follows this strict order:
 
-Fatigue Penalty
+1️⃣ Expiry Check
 
-AI Score
+If expires_at < current_time → NEVER
 
-Final Classification (NOW / LATER / NEVER)
+2️⃣ Critical Override
 
-🧠 Decision Strategy
+If priority_hint == critical → NOW
 
-Hard Rules
+3️⃣ Duplicate Suppression
 
-Expired → NEVER
+TTL-based (5 minutes) suppression using:
 
-Critical → NOW
+dedupe:{user_id}:{message}
 
-Deduplication
+If duplicate → NEVER
 
-Suppresses duplicate notifications within 5-minute window.
-
-Alert Fatigue
-
-Applies penalty after threshold per user.
-
-Scoring
+4️⃣ Scoring System
 Final Score = Rule Score + AI Score - Fatigue Penalty
 Score Range	Decision
 > 75	NOW
 40–75	LATER
 < 40	NEVER
-🗄 Audit & Explainability
+🧾 API Interfaces (5 Endpoints)
+1️⃣ POST /notifications
 
-Each event:
+Main decision endpoint.
 
-Generates UUID event_id
+Request
+{
+  "user_id": "u123",
+  "event_type": "alert",
+  "message": "Server Down!",
+  "source": "system",
+  "priority_hint": "critical",
+  "timestamp": "2026-02-26T10:00:00",
+  "channel": "push"
+}
+Response
+{
+  "event_id": "uuid",
+  "decision": "NOW",
+  "reason": "Critical priority override",
+  "explanation": {}
+}
+2️⃣ GET /audit/{event_id}
 
-Stores decision in SQLite
+Retrieve stored decision for transparency.
 
-Logs explanation object
+3️⃣ GET /health
 
-Can be retrieved via:
+Health check endpoint.
 
-GET /audit/{event_id}
+4️⃣ GET /metrics
 
-📦 Tech Stack
+Returns decision distribution & monitoring statistics.
+
+5️⃣ POST /rules/update
+
+Supports dynamic rule configuration without redeployment.
+
+🗄 Data Model
+NotificationEvent
+
+user_id
+
+event_type
+
+message
+
+source
+
+priority_hint
+
+timestamp
+
+channel
+
+expires_at (optional)
+
+AuditLog
+
+event_id (UUID)
+
+user_id
+
+decision
+
+reason
+
+explanation (JSON)
+
+created_at
+
+🔁 Duplicate Prevention Strategy
+
+Uses 5-minute TTL window
+
+Suppresses repeated notifications
+
+Prevents spam bursts
+
+Designed to scale with Redis (future upgrade)
+
+🔔 Alert Fatigue Strategy
+
+Tracks per-user notification count
+
+Applies penalty after threshold
+
+Reduces noisy, low-priority events
+
+Protects user experience
+
+🧠 AI Scoring Layer
+
+AI scoring component evaluates likelihood of engagement
+
+Combined with rule score
+
+Designed to fallback safely if AI service fails
+
+🛡 Fail-Safe Strategy
+
+If any dependent component fails:
+
+AI failure → fallback to rule score
+
+DB failure → decision still returned, error logged
+
+Redis failure → fallback to in-memory dedupe
+
+System always returns a decision (no silent drops)
+
+📊 Monitoring & Metrics Plan
+
+System designed to support:
+
+Decision distribution tracking
+
+Duplicate rate monitoring
+
+Fatigue-trigger frequency
+
+Latency monitoring
+
+Error rate tracking
+
+⚙️ Tech Stack
 
 Python
 
@@ -111,98 +234,54 @@ SQLite
 
 Pydantic
 
-(Optional) Redis
+Redis (scalable dedupe)
 
-(Optional) APScheduler
+APScheduler (optional scheduling)
 
-(Optional) scikit-learn
+scikit-learn (AI scoring)
 
-🧪 Example Request
-
-{
-  "user_id": "u123",
-  
-  "event_type": "alert",
-  
-  "message": "Server Down!",
-  
-  "source": "system",
-  
-  "priority_hint": "critical",
-  
-  "timestamp": "2026-02-26T10:00:00",
-  
-  "channel": "push"
-}
-
-Example Response
-
-{
-  "event_id": "uuid",
-  
-  "decision": "NOW",
-  
-  "reason": "Critical priority override",
-  
-  "explanation": {}
-}
-
-🔍 Health Check
-
-GET /health
-
-Returns:
-
-{
-  "status": "Notification Engine Running"
-}
-
-🎯 Features Implemented
-
- NOW / LATER / NEVER classification
-
- TTL-based duplicate suppression
-
- Alert fatigue protection
-
- Explainable scoring logic
-
- Persistent audit logging
-
- UUID tracking
-
- Modular architecture
- 
-
+🚀 Running Locally
+1️⃣ Install dependencies
+pip install -r requirements.txt
+2️⃣ Run server
+uvicorn app.main:app --reload
+3️⃣ Access docs
+http://127.0.0.1:8000/docs
 📈 Future Improvements
 
+Redis cluster support
 
-Redis-based distributed dedupe
+Distributed deployment
 
-Background scheduler for LATER
+Background worker for LATER queue
 
-ML-based scoring model
+Real-time push integration
 
-Metrics & monitoring
+ML model training dashboard
 
-Dynamic rule configuration
+Rate-limiting per channel
 
+User preference learning
 
-🧠 Design Philosophy
+🎯 Design Principles
 
-This system prioritizes:
+Explainability first
 
-Reliability
+Deterministic decision order
 
-Explainability
+Modular architecture
 
-Auditability
+Extensible scoring system
 
-Scalability
+Audit-compliant logging
 
-Clear separation of concerns
+Scalability-ready design
 
-💡 Author
+👨‍💻 Author
 
 Murali Dharan Sanapala
 AI/ML & Backend Engineering Enthusiast
+
+🏁 Summary
+
+This Notification Prioritization Engine provides a scalable, explainable, and production-ready framework to intelligently manage notification overload while ensuring important alerts are never silently lost.
