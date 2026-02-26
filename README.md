@@ -40,11 +40,13 @@ Alert fatigue is reduced.
 Every decision is explainable and auditable.
 
 🏗 Architecture Overview
+
 1️⃣ Input Layer
 
 Receives notification events via FastAPI endpoint:
 
 POST /notifications
+
 2️⃣ Decision Engine Pipeline
 
 Expiry Check
@@ -62,6 +64,7 @@ AI Score
 Final Classification (NOW / LATER / NEVER)
 
 🧠 Decision Strategy
+
 Hard Rules
 
 Expired → NEVER
@@ -95,6 +98,7 @@ Logs explanation object
 Can be retrieved via:
 
 GET /audit/{event_id}
+
 📦 Tech Stack
 
 Python
@@ -114,23 +118,37 @@ Pydantic
 (Optional) scikit-learn
 
 🧪 Example Request
+
 {
   "user_id": "u123",
+  
   "event_type": "alert",
+  
   "message": "Server Down!",
+  
   "source": "system",
+  
   "priority_hint": "critical",
+  
   "timestamp": "2026-02-26T10:00:00",
+  
   "channel": "push"
 }
+
 Example Response
+
 {
   "event_id": "uuid",
+  
   "decision": "NOW",
+  
   "reason": "Critical priority override",
+  
   "explanation": {}
 }
+
 🔍 Health Check
+
 GET /health
 
 Returns:
@@ -138,6 +156,7 @@ Returns:
 {
   "status": "Notification Engine Running"
 }
+
 🎯 Features Implemented
 
  NOW / LATER / NEVER classification
@@ -153,8 +172,10 @@ Returns:
  UUID tracking
 
  Modular architecture
+ 
 
 📈 Future Improvements
+
 
 Redis-based distributed dedupe
 
@@ -165,6 +186,7 @@ ML-based scoring model
 Metrics & monitoring
 
 Dynamic rule configuration
+
 
 🧠 Design Philosophy
 
